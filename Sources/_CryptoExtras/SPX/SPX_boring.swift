@@ -154,7 +154,7 @@ extension SPX {
             signature.withUnsafeBytes { signaturePtr in
                 let bytes: ContiguousBytes = data.regions.count == 1 ? data.regions.first! : Array(data)
                 let rc: CInt = bytes.withUnsafeBytes { dataPtr in
-                    return CCryptoBoringSSL_SPX_verify(
+                    CCryptoBoringSSL_SPX_verify(
                         signaturePtr.baseAddress,
                         self.pointer,
                         dataPtr.baseAddress,
