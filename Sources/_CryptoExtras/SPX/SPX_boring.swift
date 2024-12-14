@@ -6,77 +6,93 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
 
 @_implementationOnly import CCryptoBoringSSL
-@_implementationOnly import CCryptoBoringSSLShims
 import Crypto
-@_implementationOnly import CryptoBoringWrapper
 import Foundation
 
-#if swift(>=5.8)
-@_documentation(visibility: public)
+/// The SPHINCS+-SHA2-128s digital signature algorithm, which provides security against quantum computing attacks.
 public enum SPX {}
-#else
-public enum SPX {}
-#endif
 
 extension SPX {
+    /// A SPHINCS+-SHA2-128s private key.
     public struct PrivateKey: Sendable {
         private let pointer: UnsafeMutablePointer<UInt8>
-        
+
+        /// Initialize a SPHINCS+-SHA2-128s private key from a random seed.
         public init() {
             self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PrivateKey.bytesCount)
-            CCryptoBoringSSL_spx_generate_key(UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PublicKey.bytesCount), self.pointer)
+
+            withUnsafeTemporaryAllocation(of: UInt8.self, capacity: SPX.PublicKey.bytesCount) { publicKeyPtr in
+                CCryptoBoringSSL_SPX_generate_key(publicKeyPtr.baseAddress, self.pointer)
+            }
         }
-        
-        public init(from seed: some DataProtocol) throws {
-            guard seed.count >= SPX.seedSizeInBytes else {
+
+        // Initialize a SPHINCS+-SHA2-128s private key from a seed.
+        ///
+        /// - Parameter seed: The seed to use to generate the private key.
+        ///
+        /// - Throws: `CryptoKitError.incorrectKeySize` if the seed is not 48 bytes long.
+        public init(seed: some DataProtocol) throws {
+            guard seed.count == SPX.seedSizeInBytes else {
                 throw CryptoKitError.incorrectKeySize
             }
-            let seedPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.seedSizeInBytes)
-            seedPtr.initialize(from: seed.regions.flatMap { $0 }, count: SPX.seedSizeInBytes)
+
             self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PrivateKey.bytesCount)
-            CCryptoBoringSSL_spx_generate_key_from_seed(UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PublicKey.bytesCount), self.pointer, seedPtr)
+
+            withUnsafeTemporaryAllocation(of: UInt8.self, capacity: SPX.PublicKey.bytesCount) { publicKeyPtr in
+                Data(seed).withUnsafeBytes { seedPtr in
+                    CCryptoBoringSSL_SPX_generate_key_from_seed(
+                        publicKeyPtr.baseAddress,
+                        self.pointer,
+                        seedPtr.baseAddress
+                    )
+                }
+            }
         }
 
-        public init<Bytes: DataProtocol>(derRepresentation: Bytes) throws {
-            guard derRepresentation.count == SPX.PrivateKey.bytesCount else {
+        /// Initialize a SPHINCS+-SHA2-128s private key from a raw representation.
+        ///
+        /// - Parameter rawRepresentation: The private key bytes.
+        ///
+        /// - Throws: `CryptoKitError.incorrectKeySize` if the raw representation is not the correct size.
+        public init(rawRepresentation: some DataProtocol) throws {
+            guard rawRepresentation.count == SPX.PrivateKey.bytesCount else {
                 throw CryptoKitError.incorrectKeySize
             }
+
             self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PrivateKey.bytesCount)
-            self.pointer.initialize(from: derRepresentation.regions.flatMap { $0 }, count: SPX.PrivateKey.bytesCount)
-        }
-        
-        public init(pemRepresentation: String) throws {
-            let document = try ASN1.PEMDocument(pemString: pemRepresentation)
-            self = try .init(derRepresentation: document.derBytes)
+
+            self.pointer.initialize(from: Array(rawRepresentation), count: SPX.PrivateKey.bytesCount)
         }
 
-        public var bytes: [UInt8] {
-            return Array(UnsafeBufferPointer(start: self.pointer, count: SPX.PrivateKey.bytesCount))
-        }
-        
-        public var derRepresentation: Data {
-            return Data(UnsafeBufferPointer(start: self.pointer, count: SPX.PrivateKey.bytesCount))
-        }
-        
-        public var pemRepresentation: String {
-            return ASN1.PEMDocument(type: SPX.KeyType, derBytes: self.derRepresentation).pemString
+        /// The raw representation of the private key.
+        public var rawRepresentation: Data {
+            Data(UnsafeBufferPointer(start: self.pointer, count: SPX.PrivateKey.bytesCount))
         }
 
+        /// The public key associated with this private key.
         public var publicKey: PublicKey {
-            return PublicKey(privateKey: self)
+            PublicKey(privateKeyBacking: self)
         }
 
-        public func signature<D: DataProtocol>(for data: D, randomized: Bool = false) -> Signature {
-            let output = Array<UInt8>(unsafeUninitializedCapacity: Signature.bytesCount) { bufferPtr, length in
-                data.regions.first!.withUnsafeBytes { dataPtr in
-                    CCryptoBoringSSL_spx_sign(
+        /// Generate a signature for the given data.
+        ///
+        /// - Parameters:
+        ///   - data: The message to sign.
+        ///   - randomized: Whether to randomize the signature.
+        ///
+        /// - Returns: The signature of the message.
+        public func signature(for data: some DataProtocol, randomized: Bool = false) -> Signature {
+            let output = [UInt8](unsafeUninitializedCapacity: Signature.bytesCount) { bufferPtr, length in
+                let bytes: ContiguousBytes = data.regions.count == 1 ? data.regions.first! : Array(data)
+                bytes.withUnsafeBytes { dataPtr in
+                    CCryptoBoringSSL_SPX_sign(
                         bufferPtr.baseAddress,
                         self.pointer,
                         dataPtr.baseAddress,
@@ -88,59 +104,57 @@ extension SPX {
             }
             return Signature(signatureBytes: output)
         }
-        
-        public static let bytesCount = 64
+
+        /// The size of the private key in bytes.
+        static let bytesCount = 64
     }
 }
 
 extension SPX {
+    /// A SPHINCS+-SHA2-128s public key.
     public struct PublicKey: Sendable {
         private let pointer: UnsafeMutablePointer<UInt8>
-        
-        fileprivate init(privateKey: PrivateKey) {
+
+        fileprivate init(privateKeyBacking: PrivateKey) {
             self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PublicKey.bytesCount)
-            self.pointer.initialize(from: privateKey.bytes.suffix(SPX.PublicKey.bytesCount), count: SPX.PublicKey.bytesCount)
-        }
-        
-        public init(from seed: some DataProtocol) throws {
-            guard seed.count >= SPX.seedSizeInBytes else {
-                throw CryptoKitError.incorrectKeySize
-            }
-            let seedPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.seedSizeInBytes)
-            seedPtr.initialize(from: seed.regions.flatMap { $0 }, count: SPX.seedSizeInBytes)
-            self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PublicKey.bytesCount)
-            CCryptoBoringSSL_spx_generate_key_from_seed(self.pointer, UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PrivateKey.bytesCount), seedPtr)
-        }
-        
-        public init<Bytes: DataProtocol>(derRepresentation: Bytes) throws {
-            guard derRepresentation.count == SPX.PublicKey.bytesCount else {
-                throw CryptoKitError.incorrectKeySize
-            }
-            self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PublicKey.bytesCount)
-            self.pointer.initialize(from: derRepresentation.regions.flatMap { $0 }, count: SPX.PublicKey.bytesCount)
-        }
-        
-        public init(pemRepresentation: String) throws {
-            let document = try ASN1.PEMDocument(pemString: pemRepresentation)
-            self = try .init(derRepresentation: document.derBytes)
+            self.pointer.initialize(
+                from: privateKeyBacking.rawRepresentation.suffix(SPX.PublicKey.bytesCount),
+                count: SPX.PublicKey.bytesCount
+            )
         }
 
-        public var bytes: [UInt8] {
-            return Array(UnsafeBufferPointer(start: self.pointer, count: SPX.PublicKey.bytesCount))
+        /// Initialize a SPHINCS+-SHA2-128s public key from a raw representation.
+        ///
+        /// - Parameter rawRepresentation: The public key bytes.
+        ///
+        /// - Throws: `CryptoKitError.incorrectKeySize` if the raw representation is not the correct size.
+        public init(rawRepresentation: some DataProtocol) throws {
+            guard rawRepresentation.count == SPX.PublicKey.bytesCount else {
+                throw CryptoKitError.incorrectKeySize
+            }
+
+            self.pointer = UnsafeMutablePointer<UInt8>.allocate(capacity: SPX.PublicKey.bytesCount)
+
+            self.pointer.initialize(from: Array(rawRepresentation), count: SPX.PublicKey.bytesCount)
         }
-        
-        public var derRepresentation: Data {
-            return Data(UnsafeBufferPointer(start: self.pointer, count: SPX.PublicKey.bytesCount))
+
+        /// The raw representation of the public key.
+        public var rawRepresentation: Data {
+            Data(UnsafeBufferPointer(start: self.pointer, count: SPX.PublicKey.bytesCount))
         }
-        
-        public var pemRepresentation: String {
-            return ASN1.PEMDocument(type: SPX.PublicKeyType, derBytes: self.derRepresentation).pemString
-        }
-        
+
+        /// Verify a signature for the given data.
+        ///
+        /// - Parameters:
+        ///   - signature: The signature to verify.
+        ///   - data: The message to verify the signature against.
+        ///
+        /// - Returns: `true` if the signature is valid, `false` otherwise.
         public func isValidSignature<D: DataProtocol>(_ signature: Signature, for data: D) -> Bool {
-            return signature.withUnsafeBytes { signaturePtr in
-                let rc: CInt = data.regions.first!.withUnsafeBytes { dataPtr in
-                    return CCryptoBoringSSL_spx_verify(
+            signature.withUnsafeBytes { signaturePtr in
+                let bytes: ContiguousBytes = data.regions.count == 1 ? data.regions.first! : Array(data)
+                let rc: CInt = bytes.withUnsafeBytes { dataPtr in
+                    return CCryptoBoringSSL_SPX_verify(
                         signaturePtr.baseAddress,
                         self.pointer,
                         dataPtr.baseAddress,
@@ -150,35 +164,46 @@ extension SPX {
                 return rc == 1
             }
         }
-        
-        public static let bytesCount = 32
+
+        /// The size of the public key in bytes.
+        static let bytesCount = 32
     }
 }
 
 extension SPX {
+    /// A SPHINCS+-SHA2-128s signature.
     public struct Signature: Sendable, ContiguousBytes {
+        /// The raw binary representation of the signature.
         public var rawRepresentation: Data
-        
-        public init<D: DataProtocol>(rawRepresentation: D) {
+
+        /// Initialize a SPHINCS+-SHA2-128s signature from a raw representation.
+        ///
+        /// - Parameter rawRepresentation: The signature bytes.
+        public init(rawRepresentation: some DataProtocol) {
             self.rawRepresentation = Data(rawRepresentation)
         }
-        
-        internal init(signatureBytes: [UInt8]) {
+
+        /// Initialize a SPHINCS+-SHA2-128s signature from a raw representation.
+        ///
+        /// - Parameter rawRepresentation: The signature bytes.
+        init(signatureBytes: [UInt8]) {
             self.rawRepresentation = Data(signatureBytes)
         }
-        
+
+        /// Access the signature bytes.
+        ///
+        /// - Parameter body: The closure to execute with the signature bytes.
+        ///
+        /// - Returns: The result of the closure.
         public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
             try self.rawRepresentation.withUnsafeBytes(body)
         }
-        
-        public static let bytesCount = 7856
+
+        /// The size of the signature in bytes.
+        static let bytesCount = 7856
     }
 }
 
 extension SPX {
-    static let KeyType = "PRIVATE KEY"
-    
-    static let PublicKeyType = "PUBLIC KEY"
-    
-    public static let seedSizeInBytes = 3 * 16
+    static let seedSizeInBytes = 3 * 16
 }

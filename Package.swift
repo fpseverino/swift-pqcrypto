@@ -150,6 +150,10 @@ let package = Package(
                 "CMakeLists.txt",
             ],
             resources: privacyManifestResource,
+            cSettings: [
+                // Enable SPHINCS+
+                .define("OPENSSL_UNSTABLE_EXPERIMENTAL_SPX"),
+            ],
             swiftSettings: swiftSettings
         ),
         .target(
