@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -61,7 +61,13 @@ enum OpenSSLAESCFBImpl {
             key.withUnsafeBytes { keyBufferPtr in
                 iv.withUnsafeMutableBytes { ivBufferPtr in
                     var key = AES_KEY()
-                    precondition(CCryptoBoringSSL_AES_set_encrypt_key(keyBufferPtr.baseAddress, UInt32(keyBufferPtr.count * 8), &key) == 0)
+                    precondition(
+                        CCryptoBoringSSL_AES_set_encrypt_key(
+                            keyBufferPtr.baseAddress,
+                            UInt32(keyBufferPtr.count * 8),
+                            &key
+                        ) == 0
+                    )
                     CCryptoBoringSSL_AES_cfb128_encrypt(
                         plaintextBufferPtr.baseAddress,
                         ciphertextBufferPtr.baseAddress,

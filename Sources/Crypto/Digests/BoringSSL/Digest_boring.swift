@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -155,7 +155,7 @@ struct OpenSSLDigestImpl<H: BoringSSLBackedHashFunction> {
     }
 }
 
-fileprivate final class DigestContext<H: BoringSSLBackedHashFunction> {
+private final class DigestContext<H: BoringSSLBackedHashFunction> {
     private var context: H.Context
 
     init() {
@@ -196,4 +196,4 @@ fileprivate final class DigestContext<H: BoringSSLBackedHashFunction> {
         withUnsafeMutablePointer(to: &self.context) { $0.zeroize() }
     }
 }
-#endif // CRYPTO_IN_SWIFTPM && !CRYPTO_IN_SWIFTPM_FORCE_BUILD_API
+#endif  // CRYPTO_IN_SWIFTPM && !CRYPTO_IN_SWIFTPM_FORCE_BUILD_API

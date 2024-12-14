@@ -6,15 +6,38 @@
 ## Licensed under Apache License v2.0
 ##
 ## See LICENSE.txt for license information
-## See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+## See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 ##
 ## SPDX-License-Identifier: Apache-2.0
 ##
 ##===----------------------------------------------------------------------===##
 
 add_library(_CryptoExtras
+  "AES/AES_CBC.swift"
+  "AES/AES_CFB.swift"
+  "AES/AES_CTR.swift"
+  "AES/AES_GCM_SIV.swift"
+  "AES/Block Function.swift"
+  "AES/BoringSSL/AES_CFB_boring.swift"
+  "AES/BoringSSL/AES_CTR_boring.swift"
+  "AES/BoringSSL/AES_GCM_SIV_boring.swift"
   "ChaCha20CTR/BoringSSL/ChaCha20CTR_boring.swift"
   "ChaCha20CTR/ChaCha20CTR.swift"
+  "ECToolbox/BoringSSL/ECToolbox_boring.swift"
+  "ECToolbox/ECToolbox.swift"
+  "H2G/HashToField.swift"
+  "Key Derivation/KDF.swift"
+  "Key Derivation/PBKDF2/BoringSSL/PBKDF2_boring.swift"
+  "Key Derivation/PBKDF2/BoringSSL/PBKDF2_commoncrypto.swift"
+  "Key Derivation/PBKDF2/PBKDF2.swift"
+  "Key Derivation/Scrypt/BoringSSL/Scrypt_boring.swift"
+  "Key Derivation/Scrypt/Scrypt.swift"
+  "OPRFs/OPRF.swift"
+  "OPRFs/OPRFClient.swift"
+  "OPRFs/OPRFServer.swift"
+  "OPRFs/VOPRF+API.swift"
+  "OPRFs/VOPRFClient.swift"
+  "OPRFs/VOPRFServer.swift"
   "RSA/RSA+BlindSigning.swift"
   "RSA/RSA.swift"
   "RSA/RSA_boring.swift"
@@ -23,11 +46,11 @@ add_library(_CryptoExtras
   "Util/CryptoKitErrors_boring.swift"
   "Util/DigestType.swift"
   "Util/Error.swift"
+  "Util/I2OSP.swift"
   "Util/PEMDocument.swift"
-  "Util/RandomBytes.swift"
-  "Util/Shared/ArbitraryPrecisionInteger_boring.swift"
-  "Util/Shared/FiniteFieldArithmeticContext_boring.swift"
-  "Util/SubjectPublicKeyInfo.swift")
+  "Util/PrettyBytes.swift"
+  "Util/SubjectPublicKeyInfo.swift"
+  "ZKPs/DLEQ.swift")
 
 target_include_directories(_CryptoExtras PRIVATE
   $<TARGET_PROPERTY:CCryptoBoringSSL,INCLUDE_DIRECTORIES>
@@ -39,6 +62,8 @@ target_link_libraries(_CryptoExtras PUBLIC
   CryptoBoringWrapper
   CCryptoBoringSSL
   CCryptoBoringSSLShims)
+
+target_compile_options(_CryptoExtras PRIVATE ${SWIFT_CRYPTO_COMPILE_OPTIONS})
 
 target_link_options(_CryptoExtras PRIVATE
     "$<$<PLATFORM_ID:Darwin>:SHELL:-Xlinker -framework -Xlinker Security>")

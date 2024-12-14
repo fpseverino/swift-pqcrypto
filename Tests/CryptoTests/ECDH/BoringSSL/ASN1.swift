@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -200,7 +200,7 @@ struct ASN1ObjectIdentifier {
         case ..<40:
             oidComponents.append(0)
             oidComponents.append(subcomponents.first!)
-        case 40 ..< 80:
+        case 40..<80:
             oidComponents.append(1)
             oidComponents.append(subcomponents.first! - 40)
         default:
@@ -289,7 +289,7 @@ extension ArraySlice where Element == UInt8 {
             throw ECDHTestErrors.ParseSPKIFailure
         }
 
-        let oidSlice = self[self.startIndex ... subidentifierEndIndex]
+        let oidSlice = self[self.startIndex...subidentifierEndIndex]
         self = self[self.index(after: subidentifierEndIndex)...]
 
         // We need to compact the bits. These are 7-bit integers, which is really awkward.
@@ -337,4 +337,4 @@ extension UInt {
     }
 }
 
-#endif // CRYPTO_IN_SWIFTPM
+#endif  // CRYPTO_IN_SWIFTPM

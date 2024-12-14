@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -133,6 +133,20 @@ int CCryptoBoringSSLShims_EVP_PKEY_encrypt(EVP_PKEY_CTX *ctx, void *out,
 int CCryptoBoringSSLShims_EVP_PKEY_decrypt(EVP_PKEY_CTX *ctx, void *out,
                                            size_t *out_len, const void *in,
                                            size_t in_len);
+
+int CCryptoBoringSSLShims_EC_hash_to_curve_p256_xmd_sha256_sswu(const EC_GROUP *group, EC_POINT *out,
+                                                                const void *dst, size_t dst_len,
+                                                                const void *msg, size_t msg_len);
+
+int CCryptoBoringSSLShims_EC_hash_to_curve_p384_xmd_sha384_sswu(const EC_GROUP *group, EC_POINT *out,
+                                                                const void *dst, size_t dst_len,
+                                                                const void *msg, size_t msg_len);
+
+size_t CCryptoBoringSSLShims_EC_POINT_point2oct(const EC_GROUP *group,
+                                                const EC_POINT *point,
+                                                point_conversion_form_t form,
+                                                void *buf, size_t max_out,
+                                                BN_CTX *ctx);
 
 #if defined(__cplusplus)
 }

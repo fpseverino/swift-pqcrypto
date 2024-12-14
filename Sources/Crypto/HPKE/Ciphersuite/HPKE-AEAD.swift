@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -82,9 +82,9 @@ extension HPKE {
         internal func seal<D: DataProtocol, AD: DataProtocol>(_ message: D, authenticating aad: AD, nonce: Data, using key: SymmetricKey) throws -> Data {
             switch self {
             case .chaChaPoly:
-                return try ChaChaPoly.seal(message, using: key, nonce: ChaChaPoly.Nonce(data: nonce), authenticating: aad).combined.suffix(from: nonce.count)
+                return try ChaChaPoly.seal(message, using: key, nonce: ChaChaPoly.Nonce(data: nonce), authenticating: aad).combined.dropFirst(nonce.count)
             default:
-                return try AES.GCM.seal(message, using: key, nonce: AES.GCM.Nonce(data: nonce), authenticating: aad).combined!.suffix(from: nonce.count)
+                return try AES.GCM.seal(message, using: key, nonce: AES.GCM.Nonce(data: nonce), authenticating: aad).combined!.dropFirst(nonce.count)
             }
         }
         

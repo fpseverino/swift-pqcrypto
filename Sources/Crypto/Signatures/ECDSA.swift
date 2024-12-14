@@ -6,7 +6,7 @@
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of SwiftCrypto project authors
+// See CONTRIBUTORS.txt for the list of SwiftCrypto project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -66,7 +66,7 @@ extension P256.Signing {
             let combined = rawRepresentation
             assert(combined.count % 2 == 0)
             let half = combined.count / 2
-            return (combined.prefix(upTo: half), combined.suffix(from: half))
+            return (combined.prefix(half), combined.suffix(half))
         }
 
         /// Creates a P-256 digital signature from a Distinguished Encoding
@@ -115,8 +115,8 @@ extension P256.Signing {
             #else
             let raw = rawRepresentation
             let half = raw.count / 2
-            let r = Array(raw.prefix(upTo: half))[...]
-            let s = Array(raw.suffix(from: half))[...]
+            let r = Array(raw.prefix(half))[...]
+            let s = Array(raw.suffix(half))[...]
 
             let sig = ASN1.ECDSASignature(r: r, s: s)
             var serializer = ASN1.Serializer()
@@ -229,7 +229,7 @@ extension P384.Signing {
             let combined = rawRepresentation
             assert(combined.count % 2 == 0)
             let half = combined.count / 2
-            return (combined.prefix(upTo: half), combined.suffix(from: half))
+            return (combined.prefix(half), combined.suffix(half))
         }
 
         /// Creates a P-384 digital signature from a Distinguished Encoding
@@ -278,8 +278,8 @@ extension P384.Signing {
             #else
             let raw = rawRepresentation
             let half = raw.count / 2
-            let r = Array(raw.prefix(upTo: half))[...]
-            let s = Array(raw.suffix(from: half))[...]
+            let r = Array(raw.prefix(half))[...]
+            let s = Array(raw.suffix(half))[...]
 
             let sig = ASN1.ECDSASignature(r: r, s: s)
             var serializer = ASN1.Serializer()
@@ -392,7 +392,7 @@ extension P521.Signing {
             let combined = rawRepresentation
             assert(combined.count % 2 == 0)
             let half = combined.count / 2
-            return (combined.prefix(upTo: half), combined.suffix(from: half))
+            return (combined.prefix(half), combined.suffix(half))
         }
 
         /// Creates a P-521 digital signature from a Distinguished Encoding
@@ -441,8 +441,8 @@ extension P521.Signing {
             #else
             let raw = rawRepresentation
             let half = raw.count / 2
-            let r = Array(raw.prefix(upTo: half))[...]
-            let s = Array(raw.suffix(from: half))[...]
+            let r = Array(raw.prefix(half))[...]
+            let s = Array(raw.suffix(half))[...]
 
             let sig = ASN1.ECDSASignature(r: r, s: s)
             var serializer = ASN1.Serializer()
